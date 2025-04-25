@@ -1,0 +1,28 @@
+{
+  "name": "raahi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "engine": {
+    "node": "22.15.0",
+    "npm": "10.9.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rishiraj0802/Raaahi.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rishiraj0802/Raaahi/issues"
+  },
+  "homepage": "https://github.com/rishiraj0802/Raaahi#readme",
+  "dependencies": {
+    "express": "5.1.0",
+    "nconf": "0.13.0"
+  }
+}

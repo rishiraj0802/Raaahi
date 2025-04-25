@@ -1,0 +1,11 @@
+const app = require('express')()
+const nconf = require('nconf')
+const port = nconf.get('port')
+app.get('/', (req, res) => {
+  res.send('Hello World!')
+})
+app.post('/addUser', (req, res) => {})
+app.delete('/removeUser', (req, res) => {})
+app.post('/search', (req, res) => {})
+app.post('/cleanup', (req, res) => {})
+app.listen(3000, () => {console.log(`Server running on port ${port}`)})
