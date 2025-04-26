@@ -1,0 +1,2 @@
+sudo docker run -d --name database -p 5432:5432 -e POSTGRES_PASSWORD=`$DB_PASSWORD`postgres
+
