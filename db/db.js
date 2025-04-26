@@ -90,7 +90,7 @@ const addDummyUsers = async(ip)=>{
     console.log("Dummy Users inserted into the database")
   }
   catch(err){
-    console.log(`Error: ${err} during adding users!`)
+    throw err
   }
 }
 module.exports = { initializeDB, addDummyUsers};
