@@ -1,4 +1,5 @@
 const { Client } = require('pg');
+const bcrypt = require('bcryptjs')
 const nconf = require('nconf')
 nconf.env();
 const password = nconf.get('DB_PASSWORD')
@@ -93,5 +94,47 @@ const addDummyUsers = async(ip)=>{
     throw err
   }
 }
-module.exports = { initializeDB, addDummyUsers};
+const userSignup = async(name, username, userPassword, gender, ip)=>{
+  const dbClient = new Client({
+    host: ip,
+    port: 5432,
+    user: 'postgres',
+    password: password,
+    database: 'mydb'  
+  });
+
+  try{
+    await dbClient.connect();
+    const checkUser = await dbClient.query(
+      'SELECT * FROM users WHERE username = $1',
+      [username]
+    ); 
+    if (checkUser.rowCount > 0) {
+      await dbClient.end();
+      throw new Error("User already exists") 
+    }
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(userPassword, saltRounds);
+    const insertQuery = `
+INSERT INTO users (name, username, password_hash, gender) 
+VALUES ($1, $2, $3, $4) 
+RETURNING id, name, username, gender
+`;
+    const result = await dbClient.query(insertQuery, [
+      name, 
+      username, 
+      passwordHash,
+      gender 
+    ]);
+    await dbClient.end();
+    return({
+      success: true,
+      message: 'User created successfully',
+      user: result.rows[0]
+    })
+  }catch(err){
+    throw err
+  }
+}
+module.exports = { initializeDB, addDummyUsers, userSignup};
 

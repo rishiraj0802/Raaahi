@@ -1,9 +1,14 @@
-const app = require('express')()
+const express = require('express')
 const nconf = require('nconf')
 const { exec } = require('child_process')
 const port = nconf.get('port')
-const { initializeDB, addDummyUsers } = require('./db/db.js');
+const { initializeDB, addDummyUsers , userSignup } = require('./db/db.js');
+const app = express();
 var databaseIP;
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
@@ -11,21 +16,47 @@ app.get('/', (req, res) => {
 
 app.get('/api/addDummyUsers', async(req, res) => {
   try{
-  await addDummyUsers(databaseIP).then(()=>res.send('Dummy users added to the db'));
+    await addDummyUsers(databaseIP).then(()=>res.send('Dummy users added to the db'));
   }
   catch(err){
     console.log(`Error in adding data to the table: ${err}`)
     res.status(501).send("There was an error")
   }
 })
-app.post('/addUser', (req, res) => {})
+app.post('/api/signup', async(req, res) => {
+  try{
+    const {name, username, password, gender} = req.body;
+    if(!name || !username || !password || !gender){
+      return res.status(400).json({
+        success: false,
+        message: 'Name, username, password and gender are mandatory fields'
+      })
+    }
+    else{
+      try{
+        const reply = await userSignup(name, username, password, gender, databaseIP)
+        console.log(reply)
+        res.status(201).json(reply)
+      }
+      catch(err){
+        console.log(err)
+        return res.status(500).json({success:false, error:err.message})
+      }
+    }
+  }
+  catch(err){
+    console.error(err)
+  }
+
+})
+
 app.delete('/removeUser', (req, res) => {})
 app.post('/search', (req, res) => {})
 app.post('/cleanup', (req, res) => {})
 app.listen(3000, async(err) => {
   if(err){console.log("Error Starting the server");
-      console.log(err)
-      process.exit(1)
+    console.log(err)
+    process.exit(1)
   }
   try{
     exec("sudo docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' database",async (err,ip,stderr)=>{

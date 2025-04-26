@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/rishiraj0802/Raaahi#readme",
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.2",
     "express": "5.1.0",
     "nconf": "0.13.0",
     "pg": "^8.15.5"
