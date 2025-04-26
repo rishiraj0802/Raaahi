@@ -17,7 +17,7 @@ app.get('/', (req, res) => {
 
 app.get('/api/addDummyUsers', async (req, res) => {
   try{
-    await addDummyUsers(databaseIP).then(()=>res.send('Dummy users added to the db'))
+    await addDummyUsers(dbIP).then(()=>res.send('Dummy users added to the db'))
   }
   catch(err){
     console.log(`Error in adding data to the table: ${err}`)
@@ -35,7 +35,7 @@ app.post('/api/signup', async (req, res) => {
     }
     else{
       try{
-        const reply = await userSignup(name, username, password, gender, databaseIP)
+        const reply = await userSignup(name, username, password, gender, dbIP)
         console.log(reply)
         res.status(201).json(reply)
       }
