@@ -73,26 +73,8 @@ FOREIGN KEY (fellowraahi) REFERENCES users(id)
   }
 }
 const addDummyUsers = async(ip)=>{
-
-  const dbClient = new Client({
-    host: ip,
-    port: 5432,
-    user: 'postgres',
-    password: password,
-    database: 'mydb'  
-  });
-
-  const query=`INSERT INTO users(id,name,username,password_hash,gender) values (1,'Rishav Raj','rishavD','$2a$10$Abvd1Ps2VHjaA3PrILY5COs6PGavVSVXvad4vc35xiFKxMQef5bOS', 'Female'),('2','Suman Mandal', 'mondal','$2a$10$Tqp7idi8ax8uQzUihZbIy.mNacowv91HPkmWI.PH.IFIbrO.PxnM.', 'Other');`;
-  try{
-    await dbClient.connect();
-    console.log('Connected to "mydb" database');
-    await dbClient.query(query)
-    await dbClient.end();
-    console.log("Dummy Users inserted into the database")
-  }
-  catch(err){
-    throw err
-  }
+  await userSignup('Rishav Raj', 'rishavD', 'password','female', ip)
+  await userSignup('Suman Mandal', 'mondal', 'password','other', ip)
 }
 const userSignup = async(name, username, userPassword, gender, ip)=>{
   const dbClient = new Client({
