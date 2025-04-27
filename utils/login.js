@@ -1,6 +1,10 @@
 const { Client } = require('pg')
 const { v4: uuidv4 } = require('uuid')
 const bcrypt = require('bcryptjs')
+const ip = '127.0.0.1'
+const nconf = require('nconf')
+nconf.env();
+const password = nconf.get("DB_PASSWORD")
 const dbClient = new Client({
     host: ip,
     port: 5432,
@@ -55,4 +59,4 @@ const authCheck = async(req,res,next)=>{
         return res.status(500).send("Something went wrong")
     }
 }
-module.exports = {authCheck, login}
+module.exports = {authCheck, loginUser}

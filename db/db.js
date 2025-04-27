@@ -66,7 +66,7 @@ FOREIGN KEY (fellowraahi) REFERENCES users(id)
 `)
     console.log('Table "rasta" is ready.')
 
-    await dbClient.query(`CREATE TABLE sessions (
+    await dbClient.query(`CREATE TABLE IF NOT EXISTS sessions (
     session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),  
     user_id UUID NOT NULL,                                  
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),          
