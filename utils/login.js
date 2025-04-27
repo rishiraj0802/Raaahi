@@ -28,8 +28,8 @@ const loginUser = async(username, password)=>{
             console.log("Password didn't match")
             throw new Error("Invalid Password")
         }
-
         const sessionId = uuidv4();
+        console.log({sessionId})
         await dbClient.query(`INSERT INTO sessions (session_id, user_id) VALUES ($1, $2)`,
             [sessionId, usr.id])
         dbClient.end();
@@ -43,7 +43,8 @@ catch(err){
 
 
 const authCheck = async(req,res,next)=>{
-    const sessionId = req.cookies.session_id;
+    const sessionId = req.body.session_id;
+    console.log(sessionId)
     if (!sessionId){throw new Error("Login to continue")} 
     try{
         await dbClient.connect();

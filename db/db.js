@@ -68,7 +68,7 @@ FOREIGN KEY (fellowraahi) REFERENCES users(id)
 
     await dbClient.query(`CREATE TABLE IF NOT EXISTS sessions (
     session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),  
-    user_id UUID NOT NULL,                                  
+    user_id INTEGER NOT NULL,                                  
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),          
     expires_at TIMESTAMPTZ NOT NULL DEFAULT now() + interval '2 hours', 
     ip_address TEXT,                                        
