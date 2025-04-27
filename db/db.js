@@ -94,9 +94,7 @@ const addDummyUsers = async (ip = 'localhost') => {
 }
 
 const userSignup = async (name, username, userPassword, gender, ip = 'localhost') => {
-  if (pool.options.host !== ip || pool.options.database !== 'mydb') {
-    pool = createPool('mydb', ip)
-  }
+  pool = getOrCreatePool('mydb', ip)
 
   const client = await pool.connect()
   try {
