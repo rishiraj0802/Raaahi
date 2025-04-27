@@ -4,7 +4,8 @@ const { exec } = require('child_process')
 const port = nconf.get('port') || 3000
 const dbIP = nconf.get('dbIP') || 'localhost'
 const { initializeDB, addDummyUsers , userSignup , getUser } = require('./db/db.js')
-const { searchNearbyUsers } = require('./search/index.js')
+const {loginUser, authCheck} = require('./utils/login')
+const { searchNearbyUsers } = require('./utils/index.js')
 const app = express()
 
 app.use(express.json())
@@ -51,8 +52,34 @@ app.post('/api/signup', async (req, res) => {
 
 })
 
+app.post('/api/login', async(req,res)=>{
+  
+  const {username,password} = req.body
+  if(!username || !password){
+    return res.status(401).send("Invalid Credentials")
+  } 
+  try{
+    const sessionId = await loginUser(username,password)
+     res.cookie('session_id', sessionId, {
+      httpOnly: true,
+      secure: true,           
+      sameSite: 'strict',
+      maxAge: 2 * 60 * 60 * 1000   
+    });
+
+    return res.json({ message: 'Login successful' });
+
+  }
+  catch(err){
+    res.send(`Login failed! Please try again Error: ${err}`)
+  }
+})
+
+
+
+
 app.delete('/removeUser', (req, res) => {})
-app.post('/api/searchNearbyUsers', async (req, res) => {
+app.post('/api/searchNearbyUsers', authCheck,async (req, res) => {
     const { latitude, longitude } = req.body
     if (!latitude || !longitude) {
         return res.status(400).json({

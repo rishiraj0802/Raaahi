@@ -66,6 +66,17 @@ FOREIGN KEY (fellowraahi) REFERENCES users(id)
 `)
     console.log('Table "rasta" is ready.')
 
+    await dbClient.query(`CREATE TABLE sessions (
+    session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),  
+    user_id UUID NOT NULL,                                  
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),          
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT now() + interval '2 hours', 
+    ip_address TEXT,                                        
+    user_agent TEXT,                                        
+    session_data JSONB DEFAULT '{}'                         
+);
+`)
+    console.log("Login Table Ready")
     await dbClient.end()
     console.log('Database initialization complete.')
 
