@@ -1,173 +1,164 @@
-const { Client } = require('pg')
+const { Pool } = require('pg')
 const bcrypt = require('bcryptjs')
 const nconf = require('nconf')
 nconf.env()
-const password = nconf.get('DB_PASSWORD')
-// Function to initialize the database and tables
-async function initializeDB(ip) {
-  // PostgreSQL connection configuration
-  const client = new Client({
-    host: ip,                   
-    port: 5432,                 
-    user: 'postgres',           
-    password: password,        
-    database: 'postgres'        
-  })
 
+const password = nconf.get('DB_PASSWORD')
+
+// Create a global Pool
+const createPool = (database = 'postgres', ip = 'localhost') => {
+  return new Pool({
+    host: ip,
+    port: 5432,
+    user: 'postgres',
+    password: password,
+    database: database,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000
+  })
+}
+
+// Default pool (for 'postgres' db)
+let pool = createPool()
+
+async function initializeDB(ip = 'localhost') {
   try {
-    await client.connect()
+    pool = createPool('postgres', ip)
+    const client = await pool.connect()
     console.log('Connected to PostgreSQL server')
 
-    await client.query(`
-SELECT 1 FROM pg_database WHERE datname = 'mydb'
-`).then(async (res) => {
-      if (res.rowCount === 0) {
-        console.log('Database "mydb" not found. Creating the database...')
-        await client.query('CREATE DATABASE mydb')
-      }
-      console.log('Database "mydb" is ready.')
-    })
+    const res = await client.query(`SELECT 1 FROM pg_database WHERE datname = 'mydb'`)
+    if (res.rowCount === 0) {
+      console.log('Database "mydb" not found. Creating...')
+      await client.query('CREATE DATABASE mydb')
+    }
+    console.log('Database "mydb" is ready.')
+    client.release() // Release the connection back to pool
 
-    await client.end()
-    const dbClient = new Client({
-      host: ip,
-      port: 5432,
-      user: 'postgres',
-      password: password,
-      database: 'mydb'  
-    })
-
-    await dbClient.connect()
+    // Switch to 'mydb'
+    pool = createPool('mydb', ip)
+    const dbClient = await pool.connect()
     console.log('Connected to "mydb" database')
 
     await dbClient.query(`
-CREATE TABLE IF NOT EXISTS users (
-id SERIAL PRIMARY KEY,
-name VARCHAR(100),
-username VARCHAR(100) UNIQUE,
-password_hash VARCHAR(255),
-gender VARCHAR(10)
-)
-`)
-    console.log('Table "users" is ready.')
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100),
+        username VARCHAR(100) UNIQUE,
+        password_hash VARCHAR(255),
+        gender VARCHAR(10)
+      )
+    `)
+    console.log('Table "users" ready.')
 
     await dbClient.query(`
-CREATE TABLE IF NOT EXISTS rasta (
-queryID SERIAL PRIMARY KEY,
-search_id INTEGER,
-timeofArrival TIMESTAMP NOT NULL,
-lat DOUBLE PRECISION,
-lon DOUBLE PRECISION,
-assigned_cell VARCHAR(100),
-fellowraahi INTEGER,
-FOREIGN KEY (search_id) REFERENCES users(id),
-FOREIGN KEY (fellowraahi) REFERENCES users(id)
-)
-`)
-    console.log('Table "rasta" is ready.')
+      CREATE TABLE IF NOT EXISTS rasta (
+        queryID SERIAL PRIMARY KEY,
+        search_id INTEGER,
+        timeofArrival TIMESTAMP NOT NULL,
+        lat DOUBLE PRECISION,
+        lon DOUBLE PRECISION,
+        assigned_cell VARCHAR(100),
+        fellowraahi INTEGER,
+        FOREIGN KEY (search_id) REFERENCES users(id),
+        FOREIGN KEY (fellowraahi) REFERENCES users(id)
+      )
+    `)
+    console.log('Table "rasta" ready.')
 
-    await dbClient.query(`CREATE TABLE IF NOT EXISTS sessions (
-    session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),  
-    user_id INTEGER NOT NULL,                                  
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),          
-    expires_at TIMESTAMPTZ NOT NULL DEFAULT now() + interval '2 hours', 
-    ip_address TEXT,                                        
-    user_agent TEXT,                                        
-    session_data JSONB DEFAULT '{}'                         
-);
-`)
-    console.log("Login Table Ready")
-    await dbClient.end()
+    await dbClient.query(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id INTEGER NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        expires_at TIMESTAMPTZ NOT NULL DEFAULT now() + interval '2 hours',
+        ip_address TEXT,
+        user_agent TEXT,
+        session_data JSONB DEFAULT '{}'
+      )
+    `)
+    console.log('Table "sessions" ready.')
+
+    dbClient.release()
     console.log('Database initialization complete.')
 
   } catch (err) {
     console.error('Error during DB initialization:', err.stack)
   }
 }
-const addDummyUsers = async(ip)=>{
-  await userSignup('Rishav Raj', 'rishavD', 'password','female', ip)
-  await userSignup('Suman Mandal', 'mondal', 'password','other', ip)
-}
-const userSignup = async(name, username, userPassword, gender, ip)=>{
-  const dbClient = new Client({
-    host: ip,
-    port: 5432,
-    user: 'postgres',
-    password: password,
-    database: 'mydb'  
-  })
 
-  try{
-    await dbClient.connect()
-    const checkUser = await dbClient.query(
-      'SELECT * FROM users WHERE username = $1',
+const addDummyUsers = async (ip = 'localhost') => {
+  await userSignup('Rishav Raj', 'rishavD', 'password', 'female', ip)
+  await userSignup('Suman Mandal', 'mondal', 'password', 'other', ip)
+}
+
+const userSignup = async (name, username, userPassword, gender, ip = 'localhost') => {
+  if (pool.options.host !== ip || pool.options.database !== 'mydb') {
+    pool = createPool('mydb', ip)
+  }
+
+  const client = await pool.connect()
+  try {
+    const { rowCount } = await client.query(
+      'SELECT 1 FROM users WHERE username = $1',
       [username]
-    ) 
-    if (checkUser.rowCount > 0) {
-      await dbClient.end()
-      throw new Error("User already exists") 
+    )
+
+    if (rowCount > 0) {
+      throw new Error('User already exists')
     }
-    const saltRounds = 10
-    const passwordHash = await bcrypt.hash(userPassword, saltRounds)
+
+    const passwordHash = await bcrypt.hash(userPassword, 10)
+
     const insertQuery = `
-INSERT INTO users (name, username, password_hash, gender) 
-VALUES ($1, $2, $3, $4) 
-RETURNING id, name, username, gender
-`
-    const result = await dbClient.query(insertQuery, [
-      name, 
-      username, 
-      passwordHash,
-      gender 
-    ])
-    await dbClient.end()
-    return({
+      INSERT INTO users (name, username, password_hash, gender) 
+      VALUES ($1, $2, $3, $4) 
+      RETURNING id, name, username, gender
+    `
+    const { rows } = await client.query(insertQuery, [name, username, passwordHash, gender])
+    
+    return {
       success: true,
       message: 'User created successfully',
-      user: result.rows[0]
-    })
-  }catch(err){
+      user: rows[0]
+    }
+  } catch (err) {
     throw err
+  } finally {
+    client.release()
   }
 }
 
-const getUser = async(username, ip)=>{
-  const dbClient = new Client({
-    host: ip,
-    port: 5432,
-    user: 'postgres',
-    password: password,
-    database: 'mydb'
-  })
-  try{
-    await dbClient.connect()
-    const checkUser = await dbClient.query(
-      'SELECT * FROM users WHERE username = $1',
+const getUser = async (username, ip = 'localhost') => {
+  if (pool.options.host !== ip || pool.options.database !== 'mydb') {
+    pool = createPool('mydb', ip)
+  }
+
+  const client = await pool.connect()
+  try {
+    const { rows, rowCount } = await client.query(
+      'SELECT id, name, username, gender FROM users WHERE username = $1',
       [username]
-    ) 
-    if (checkUser.rowCount > 0) {
-      await dbClient.end()
-      delete checkUser.rows[0].password_hash
-      // Remove password_hash from the result
-      // We can also use a library like lodash to omit the field in the future
-      return({
+    )
+
+    if (rowCount > 0) {
+      return {
         success: true,
         message: 'User found',
-        user: checkUser.rows[0]
-      })
-    }
-    else{
-      await dbClient.end()
-      return({
+        user: rows[0]
+      }
+    } else {
+      return {
         success: false,
         message: 'User not found'
-      })
+      }
     }
-  }
-  catch(err){
-    await dbClient.end()
+  } catch (err) {
     throw err
+  } finally {
+    client.release()
   }
 }
-module.exports = { initializeDB, addDummyUsers, userSignup , getUser }
 
+module.exports = { initializeDB, addDummyUsers, userSignup, getUser }
