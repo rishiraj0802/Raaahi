@@ -81,10 +81,10 @@ app.post('/api/login', async(req,res)=>{
 app.delete('/removeUser', (req, res) => {})
 app.post('/api/searchNearbyUsers', authCheck,async (req, res) => {
     const { latitude, longitude, username } = req.body
-    if (!latitude || !longitude) {
+    if (!latitude || !longitude || !username) {
         return res.status(400).json({
         success: false,
-        message: 'Latitude and longitude are mandatory fields'
+        message: 'Latitude, longitude, and username are mandatory fields'
         })
     }
     const radius = req.body.radius || 1 // Default radius
