@@ -1,0 +1,6 @@
+DB_USER=
+DB_PASSWORD=
+dbIP=172.28.0.10  #Don't change this
+port=
+
+#Update the values and save as .env in the same folder.

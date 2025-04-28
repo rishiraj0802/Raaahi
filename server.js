@@ -1,11 +1,11 @@
 const express = require('express')
 const nconf = require('nconf')
-const { exec } = require('child_process')
+nconf.env()
 const port = nconf.get('port') || 3000
 const dbIP = nconf.get('dbIP') || 'localhost'
-const { initializeDB, addDummyUsers , userSignup , getUser } = require('./db/db.js')
+const { initializeDB, addDummyUsers , userSignup , getUser } = require('./db.js')
 const {loginUser, authCheck} = require('./utils/login')
-const { searchNearbyUsers } = require('./utils/index.js')
+const { searchNearbyUsers } = require('./utils/index')
 const app = express()
 
 app.use(express.json())
@@ -21,7 +21,7 @@ app.get('/api/addDummyUsers', async (req, res) => {
     await addDummyUsers(dbIP).then(()=>res.send('Dummy users added to the db'))
   }
   catch(err){
-    console.log(`Error in adding data to the table: ${err}`)
+    console.log(`[-]Error in adding data to the table: ${err}`)
     res.status(501).send("There was an error")
   }
 })
@@ -53,14 +53,14 @@ app.post('/api/signup', async (req, res) => {
 })
 
 app.post('/api/login', async(req,res)=>{
-  
+
   const {username,password} = req.body
   if(!username || !password){
     return res.status(401).send("Invalid Credentials")
   } 
   try{
     const sessionId = await loginUser(username,password)
-     res.cookie('session_id', sessionId, {
+    res.cookie('session_id', sessionId, {
       httpOnly: true,
       secure: true,           
       sameSite: 'strict',
@@ -80,41 +80,45 @@ app.post('/api/login', async(req,res)=>{
 
 app.delete('/removeUser', (req, res) => {})
 app.post('/api/searchNearbyUsers', authCheck,async (req, res) => {
-    const { latitude, longitude } = req.body
-    if (!latitude || !longitude) {
-        return res.status(400).json({
-        success: false,
-        message: 'Latitude and longitude are mandatory fields'
-        })
-    }
-    const radius = req.body.radius || 1 // Default radius
-    const response = await searchNearbyUsers(latitude, longitude, radius)
-    res.json(response)
+  const { latitude, longitude } = req.body
+  if (!latitude || !longitude) {
+    return res.status(400).json({
+      success: false,
+      message: 'Latitude and longitude are mandatory fields'
+    })
+  }
+  const radius = req.body.radius || 1 // Default radius
+  const response = await searchNearbyUsers(latitude, longitude, radius)
+  res.json(response)
 })
 
 app.get('/api/getUser', async (req, res) => {
-    const { username } = req.body
-    if (!username) {
-        return res.status(400).json({
-        success: false,
-        message: 'Username is a mandatory field'
-        })
-    }
-    response = await getUser(username, dbIP)
-    res.json(response)
+  const { username } = req.body
+  if (!username) {
+    return res.status(400).json({
+      success: false,
+      message: 'Username is a mandatory field'
+    })
+  }
+  response = await getUser(username, dbIP)
+  res.json(response)
 })
 
 app.post('/cleanup', (req, res) => {})
-app.listen(port, async(err) => {
-  if(err){console.log("Error Starting the server")
-    console.log(err)
-    process.exit(1)
-  }
+
+
+const startServer = async()=>{
   try{
     await initializeDB(dbIP)
-    console.log(`Server running on port ${port}`)
-  }
-  catch(err){
-    console.log(`Error while establishing connection to the database:${err}`)
-  }
-})
+    console.log("[+]Database Initialized, starting server...")
+    app.listen(port, err=>{
+      if(err){
+        console.error("[-]Error Starting the server: ",err)
+      }
+      console.log(`[+]Server running on port ${port} `)
+    })
+  }catch(err){
+    console.log("[-]Error initializing the database",err)
+  } 
+}
+startServer();
