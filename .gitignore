@@ -17,3 +17,4 @@ env/.env
 newrelic_agent.log
 ipblacklist.txt
 subnets.txt
+.env

@@ -2,11 +2,11 @@ const { Pool } = require('pg')
 const bcrypt = require('bcryptjs')
 const nconf = require('nconf')
 nconf.env()
-
+const ip_address = nconf.get('dbIP')
 const password = nconf.get('DB_PASSWORD')
 
 // Create a global Pool
-const createPool = (database = 'postgres', ip = 'localhost') => {
+const createPool = (database = 'postgres', ip = ip_address) => {
   return new Pool({
     host: ip,
     port: 5432,
@@ -22,24 +22,24 @@ const createPool = (database = 'postgres', ip = 'localhost') => {
 // Default pool (for 'postgres' db)
 let pool = createPool()
 
-async function initializeDB(ip = 'localhost') {
+async function initializeDB(ip = ip_address) {
   try {
     pool = createPool('postgres', ip)
     const client = await pool.connect()
-    console.log('Connected to PostgreSQL server')
+    console.log('[+]Connected to PostgreSQL server')
 
     const res = await client.query(`SELECT 1 FROM pg_database WHERE datname = 'mydb'`)
     if (res.rowCount === 0) {
-      console.log('Database "mydb" not found. Creating...')
+      console.log('[+]Database "mydb" not found. Creating...')
       await client.query('CREATE DATABASE mydb')
     }
-    console.log('Database "mydb" is ready.')
+    console.log('[+]Database "mydb" is ready.')
     client.release() // Release the connection back to pool
 
     // Switch to 'mydb'
     pool = createPool('mydb', ip)
     const dbClient = await pool.connect()
-    console.log('Connected to "mydb" database')
+    console.log('[+]Connected to "mydb" database')
 
     await dbClient.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -50,7 +50,7 @@ async function initializeDB(ip = 'localhost') {
         gender VARCHAR(10)
       )
     `)
-    console.log('Table "users" ready.')
+    console.log('[+]Table "users" ready.')
 
     await dbClient.query(`
       CREATE TABLE IF NOT EXISTS rasta (
@@ -65,7 +65,7 @@ async function initializeDB(ip = 'localhost') {
         FOREIGN KEY (fellowraahi) REFERENCES users(id)
       )
     `)
-    console.log('Table "rasta" ready.')
+    console.log('[+]Table "rasta" ready.')
 
     await dbClient.query(`
       CREATE TABLE IF NOT EXISTS sessions (
@@ -78,24 +78,24 @@ async function initializeDB(ip = 'localhost') {
         session_data JSONB DEFAULT '{}'
       )
     `)
-    console.log('Table "sessions" ready.')
+    console.log('[+]Table "sessions" ready.')
 
     dbClient.release()
-    console.log('Database initialization complete.')
 
   } catch (err) {
-    console.error('Error during DB initialization:', err.stack)
+    console.error('[-]Error during DB initialization:', err.stack)
   }
 }
 
-const addDummyUsers = async (ip = 'localhost') => {
+const addDummyUsers = async (ip = ip_address) => {
   await userSignup('Rishav Raj', 'rishavD', 'password', 'female', ip)
   await userSignup('Suman Mandal', 'mondal', 'password', 'other', ip)
 }
 
-const userSignup = async (name, username, userPassword, gender, ip = 'localhost') => {
-  pool = getOrCreatePool('mydb', ip)
-
+const userSignup = async (name, username, userPassword, gender, ip = ip_address) => {
+  if (pool.options.host !== ip || pool.options.database !== 'mydb') {
+    pool = createPool('mydb', ip)
+  }
   const client = await pool.connect()
   try {
     const { rowCount } = await client.query(
@@ -128,7 +128,7 @@ const userSignup = async (name, username, userPassword, gender, ip = 'localhost'
   }
 }
 
-const getUser = async (username, ip = 'localhost') => {
+const getUser = async (username, ip = ip_address) => {
   if (pool.options.host !== ip || pool.options.database !== 'mydb') {
     pool = createPool('mydb', ip)
   }
@@ -159,4 +159,4 @@ const getUser = async (username, ip = 'localhost') => {
   }
 }
 
-module.exports = { initializeDB, addDummyUsers, userSignup, getUser }
+module.exports = { initializeDB, addDummyUsers, userSignup, getUser, createPool}
