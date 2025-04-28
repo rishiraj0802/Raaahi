@@ -58,7 +58,7 @@ async function initializeDB(ip = ip_address) {
         expires_at TIMESTAMP
       );
     `)
-    await dbClient.query(`CREATE TABLE rasta (
+    await dbClient.query(`CREATE TABLE IF NOT EXISTS rasta (
     routeID VARCHAR(15) PRIMARY KEY,
     userIDs expiryID[]
 );
