@@ -5,7 +5,7 @@ const port = nconf.get('port') || 3000
 const dbIP = nconf.get('dbIP') || 'localhost'
 const { initializeDB, addDummyUsers , userSignup , getUser } = require('./db/db.js')
 const {loginUser, authCheck} = require('./utils/login')
-const { searchNearbyUsers } = require('./utils/index.js')
+const { searchNearbyUsers } = require('./utils/search.js')
 const app = express()
 
 app.use(express.json())
@@ -80,7 +80,7 @@ app.post('/api/login', async(req,res)=>{
 
 app.delete('/removeUser', (req, res) => {})
 app.post('/api/searchNearbyUsers', authCheck,async (req, res) => {
-    const { latitude, longitude } = req.body
+    const { latitude, longitude, username } = req.body
     if (!latitude || !longitude) {
         return res.status(400).json({
         success: false,
@@ -88,7 +88,7 @@ app.post('/api/searchNearbyUsers', authCheck,async (req, res) => {
         })
     }
     const radius = req.body.radius || 1 // Default radius
-    const response = await searchNearbyUsers(latitude, longitude, radius)
+    const response = await searchNearbyUsers(latitude, longitude, username, radius)
     res.json(response)
 })
 
