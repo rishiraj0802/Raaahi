@@ -111,7 +111,7 @@ const startServer = async()=>{
   try{
     await initializeDB(dbIP)
     console.log("[+]Database Initialized, starting server...")
-    app.listen(3000, err=>{
+    app.listen(port, err=>{
       if(err){
         console.error("[-]Error Starting the server: ",err)
       }
