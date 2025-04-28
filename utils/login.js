@@ -9,7 +9,7 @@ nconf.env();
 const dbPassword = nconf.get('DB_PASSWORD');
 const ip = nconf.get('dbIP');
 
-const pool = createPool('mydb', ip, dbPassword);
+const pool = createPool('mydb', ip, { password: dbPassword });
 
 const loginUser = async (username, password) => {
     const client = await pool.connect();
