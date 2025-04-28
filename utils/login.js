@@ -3,7 +3,7 @@ const { v4: uuidv4 } = require('uuid')
 const bcrypt = require('bcryptjs')
 const ip = '127.0.0.1'
 const nconf = require('nconf')
-nconf.env();
+nconf.env()
 const password = nconf.get("DB_PASSWORD")
 const dbClient = new Client({
     host: ip,
@@ -28,32 +28,32 @@ const loginUser = async(username, password)=>{
             console.log("Password didn't match")
             throw new Error("Invalid Password")
         }
-        const sessionId = uuidv4();
+        const sessionId = uuidv4()
         console.log({sessionId})
         await dbClient.query(`INSERT INTO sessions (session_id, user_id) VALUES ($1, $2)`,
             [sessionId, usr.id])
-        dbClient.end();
+        dbClient.end()
         return sessionId
 } 
 catch(err){
-    console.error(err);
+    console.error(err)
     throw new Error("server error")
 }
 }
 
 
 const authCheck = async(req,res,next)=>{
-    const sessionId = req.body.session_id;
+    const sessionId = req.body.session_id
     console.log(sessionId)
     if (!sessionId){throw new Error("Login to continue")} 
     try{
-        await dbClient.connect();
+        await dbClient.connect()
         const result = await dbClient.query('SELECT * FROM sessions WHERE session_id = $1 AND expires_at > now()',
             [sessionId])
         if (result.rowCount === 0) {
             throw new Error("Session expired")
         }
-        next();
+        next()
     }
     catch(err){
         console.log(err)

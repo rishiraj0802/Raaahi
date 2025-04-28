@@ -65,9 +65,9 @@ app.post('/api/login', async(req,res)=>{
       secure: true,           
       sameSite: 'strict',
       maxAge: 2 * 60 * 60 * 1000   
-    });
+    })
 
-    return res.json({ message: 'Login successful' });
+    return res.json({ message: 'Login successful' })
 
   }
   catch(err){
