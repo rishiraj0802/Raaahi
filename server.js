@@ -3,9 +3,9 @@ const nconf = require('nconf')
 nconf.env()
 const port = nconf.get('port') || 3000
 const dbIP = nconf.get('dbIP') || 'localhost'
-const { initializeDB, addDummyUsers , userSignup , getUser } = require('./db.js')
+const { initializeDB, addDummyUsers , userSignup , getUser } = require('./utils/db.js')
 const {loginUser, authCheck} = require('./utils/login')
-const { searchNearbyUsers } = require('./utils/index')
+const { searchNearbyUsers } = require('./utils/search')
 const app = express()
 
 app.use(express.json())
@@ -121,4 +121,4 @@ const startServer = async()=>{
     console.log("[-]Error initializing the database",err)
   } 
 }
-startServer();
+startServer()

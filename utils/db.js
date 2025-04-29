@@ -2,7 +2,7 @@ const { Pool } = require('pg')
 const bcrypt = require('bcryptjs')
 const nconf = require('nconf')
 nconf.env()
-const ip_address = nconf.get('dbIP')
+const ip_address = nconf.get('dbIP') || 'localhost'
 const password = nconf.get('DB_PASSWORD')
 
 // Create a global Pool
@@ -53,18 +53,16 @@ async function initializeDB(ip = ip_address) {
     console.log('[+]Table "users" ready.')
 
     await dbClient.query(`
-      CREATE TABLE IF NOT EXISTS rasta (
-        queryID SERIAL PRIMARY KEY,
-        search_id INTEGER,
-        timeofArrival TIMESTAMP NOT NULL,
-        lat DOUBLE PRECISION,
-        lon DOUBLE PRECISION,
-        assigned_cell VARCHAR(100),
-        fellowraahi INTEGER,
-        FOREIGN KEY (search_id) REFERENCES users(id),
-        FOREIGN KEY (fellowraahi) REFERENCES users(id)
-      )
+      CREATE TYPE expiryID AS (
+        id INT,
+        expires_at TIMESTAMP
+      );
     `)
+    await dbClient.query(`CREATE TABLE IF NOT EXISTS rasta (
+    routeID VARCHAR(15) PRIMARY KEY,
+    userIDs expiryID[]
+);
+`)
     console.log('[+]Table "rasta" ready.')
 
     await dbClient.query(`
