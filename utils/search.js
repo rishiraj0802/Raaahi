@@ -6,7 +6,7 @@ let pool = createPool('mydb', ip_address)
 
 const searchNearbyUsers = async (userID, geoHashSource, geoHashDest, timestamp, radius) => {
     const client = await pool.connect()
-    const query = `SELECT userIDs FROM raasta WHERE routeID = $1;`
+    const query = `SELECT userIDs FROM rasta WHERE routeID = $1;`
     const routeID = `${geoHashSource}${geoHashDest}`
     const res = await client.query(query, [routeID])
     if (res.rowCount === 0) {
