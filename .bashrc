@@ -1,1 +1,0 @@
-export DB_PASSWORD=yashrishikabaaphai
