@@ -157,4 +157,4 @@ const getUser = async (username, ip = ip_address) => {
   }
 }
 
-module.exports = { initializeDB, addDummyUsers, userSignup, getUser, createPool}
+module.exports = { initializeDB, addDummyUsers, userSignup, getUser, createPool }

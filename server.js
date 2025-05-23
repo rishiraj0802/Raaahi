@@ -80,15 +80,27 @@ app.post('/api/login', async(req,res)=>{
 
 app.delete('/removeUser', (req, res) => {})
 app.post('/api/searchNearbyUsers', authCheck,async (req, res) => {
-  const { latitude, longitude } = req.body
-  if (!latitude || !longitude) {
+  const { geoHashSource, geoHashDest, timestamp, userId } = req.body
+  if (!userId) {
+    return res.status(401).json({
+      success: false,
+      message: 'User ID is a mandatory field'
+    })
+  }
+  if (!geoHashSource || !geoHashDest) {
     return res.status(400).json({
       success: false,
-      message: 'Latitude and longitude are mandatory fields'
+      message: 'Source and Destination are mandatory fields'
+    })
+  }
+  if(!timestamp){
+    return res.status(400).json({
+      success: false,
+      message: 'Time is a mandatory field'
     })
   }
   const radius = req.body.radius || 1 // Default radius
-  const response = await searchNearbyUsers(latitude, longitude, radius)
+  const response = await searchNearbyUsers(userId, geoHashSource, geoHashDest, timestamp, radius)
   res.json(response)
 })
 
